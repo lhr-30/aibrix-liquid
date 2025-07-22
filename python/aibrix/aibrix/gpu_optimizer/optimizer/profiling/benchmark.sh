@@ -17,13 +17,13 @@
 # Result files will be added to 'PATH_PREFIX' directory.
 PATH_PREFIX=`dirname "$0"`
 OUTPUT_FILE=
-MODEL="llama2-7b"
+MODEL="meta-llama/Llama-3.1-8B-Instruct"
 TEMPERATURE=0.0  
 
 TOTAL=100  # Set your preferred request sizes and rates here.
-input_start=4
+input_start=4096
 input_limit=$((2**12)) # 4K
-output_start=4
+output_start=4096
 output_limit=$((2**12)) # 4K
 rate_start=1
 rate_limit=$((2**6)) # 64
@@ -49,7 +49,7 @@ generate_workload() {
         --tolerance "0.2" \
         --qps "2.0" \
         --host "localhost" \
-        --port "8010" \
+        --port "10000" \
         --api-key "$api_key" \
         --total-prompts "$num_prompts" \
         --model "$model" \
@@ -168,12 +168,12 @@ while [[ $input_len -le $input_limit ]]; do
         if [[ -f "$WORKLOAD_FILE" ]]; then
             echo "run benchmark with workload file: $WORKLOAD_FILE"
             # If workload file exists, run the benchmark with $WORKLOAD_FILE
-            python $PATH_PREFIX/gpu_benchmark.py --backend=vllm --port 8010 --model=$MODEL --request-rate=$actual_rate --num-prompts=$TOTAL --input-len $input_len --output-len $output_len --api-key "$LLM_API_KEY" --temperature "$TEMPERATURE" --workload_dataset_file "$WORKLOAD_FILE" --stream >> "$OUTPUT_FILE" 
+            python $PATH_PREFIX/gpu_benchmark.py --backend=vllm --port 10000 --model=$MODEL --request-rate=$actual_rate --num-prompts=$TOTAL --input-len $input_len --output-len $output_len --api-key "$LLM_API_KEY" --temperature "$TEMPERATURE" --workload_dataset_file "$WORKLOAD_FILE" --stream >> "$OUTPUT_FILE" 
         fi
         # If workload file does not exist, print the command to run the benchmark
       else
         echo "run benchmark with fixed prompts: input=$input_len, output=$output_len, rate=$actual_rate"
-        python $PATH_PREFIX/gpu_benchmark.py --backend=vllm --port 8010 --model=$MODEL --request-rate=$actual_rate --num-prompts=$TOTAL --input-len $input_len --output-len $output_len --api-key "$LLM_API_KEY" --temperature "$TEMPERATURE" --stream >> "$OUTPUT_FILE" 
+        python $PATH_PREFIX/gpu_benchmark.py --backend=vllm --port 10000 --model=$MODEL --request-rate=$actual_rate --num-prompts=$TOTAL --input-len $input_len --output-len $output_len --api-key "$LLM_API_KEY" --temperature "$TEMPERATURE" --stream >> "$OUTPUT_FILE" 
       fi
       req_rate=$((req_rate * 2)) 
     done

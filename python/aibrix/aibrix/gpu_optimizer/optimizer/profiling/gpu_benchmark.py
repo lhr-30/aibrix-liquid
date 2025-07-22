@@ -96,6 +96,7 @@ def sample_requests(
 ) -> List[Tuple[str, int, int, float]]:
     """Sample requests from prompt dataset or generate synthetic ones."""
     if workload_dataset_file:
+        print_err(f"Loading prompt dataset from {workload_dataset_file}")
         try:
             with open(workload_dataset_file) as f:
                 # Check file extension to determine format
@@ -141,6 +142,7 @@ def sample_requests(
             return []
     else:
         # Original synthetic prompt generation
+        print_err("Generating synthetic prompts")
         requests = []
         for _ in range(num_requests):
             synthetic_prompt = "hi " * config_input_len
@@ -264,24 +266,48 @@ async def send_request(
                 token_latencies = []
                 previous_token_time = time.perf_counter()
                 first = True
+                time_to_first = 0.0
                 try:
                     if streaming:
-                        async for chunk, _ in response.content.iter_chunks():
-                            # Stream on: Each chunk in the response is the full response so far
-                            chunks = [chunk]
+                        # async for chunk, _ in response.content.iter_chunks():
+                        #     # Stream on: Each chunk in the response is the full response so far
+                        #     chunks = [chunk]
 
-                            now_time = time.perf_counter()
-                            if first:
-                                time_to_first = now_time - previous_token_time
-                                first = False
-                            else:
-                                token_latencies.append(now_time - previous_token_time)
-                            previous_token_time = now_time
+                        #     now_time = time.perf_counter()
+                        #     if first:
+                        #         time_to_first = now_time - previous_token_time
+                        #         first = False
+                        #     else:
+                        #         token_latencies.append(now_time - previous_token_time)
+                        #     previous_token_time = now_time
 
-                            # Stream off: Chunks are full response.
-                            # chunks.append(chunk)
+                        #     # Stream off: Chunks are full response.
+                        #     # chunks.append(chunk)
+                        async for line in response.content:
+                            decoded = line.decode("utf-8").strip()
+                            # print_err(f"[DEBUG] Received line: {decoded}")
+                            if decoded.startswith("data: "):
+                                content = decoded[len("data: "):].strip()
+                                if content == "[DONE]":
+                                    break
+                                try:
+                                    chunk = json.loads(content)
+                                    text = chunk["choices"][0]["text"]
+                                    chunks.append(text)
 
-                        output = b"".join(chunks).decode("utf-8")
+                                    now_time = time.perf_counter()
+                                    if first:
+                                        time_to_first = now_time - request_start_time
+                                        first = False
+                                    else:
+                                        tbt = now_time - previous_token_time
+                                        token_latencies.append(tbt)
+                                    previous_token_time = now_time
+                                except Exception as e:
+                                    print(f"\n[ERROR] Failed to parse chunk: {content}\n{e}")
+                                    break
+
+                        output = "".join(chunks)
                         santicized = output.rstrip(
                             "\n\t "
                         )  # Remove trailing whitespace characters including EOF, and "[DONE]"
@@ -293,15 +319,18 @@ async def send_request(
                     print_err(f"Failed to read response for request {idx}: {e}")
                     break
             try:
-                ret = load_response(santicized)
+                # ret = load_response(santicized)
+                ret = santicized
 
                 # Re-send the request if it failed.
                 if "error" not in ret:
                     break
             except Exception as e:
+                print_err(f"Sending request: {api_url}:{pload}")
                 # It's ok to parse failure, santicized output could be jsonl, other format, or internal error.
                 print_err(f"Invalid response for request {idx}: {santicized}: {e}")
                 break
+            # print_err("finish requeset")
 
     request_end_time = time.perf_counter()
     request_latency = request_end_time - request_start_time
@@ -352,6 +381,7 @@ async def benchmark(
     async for request in get_request(
         input_requests, request_rate, num_requests, verbose, use_workload_interval
     ):
+        # print_err(f"received request: {request}")
         prompt, prompt_len, output_len, next_in = request
         task = asyncio.create_task(
             send_request(
@@ -433,7 +463,8 @@ def main(args: argparse.Namespace):
         traceback.print_exc()
     benchmark_end_time = time.perf_counter()
     benchmark_time = benchmark_end_time - benchmark_start_time
-
+    
+    # print("finished benchmark in {:.2f} s".format(benchmark_time))
     if args.verbose:
         print()
         print("RESULT SUMMARY")

@@ -77,6 +77,7 @@ class DBSCANClusterer:
         self, points: DataPoints, uncategorized: Optional[List] = None
     ) -> Tuple[Iterable[int], Iterable[Centeroid]]:
         labels = self.clusterer.get_cluster_labels(points.signatures)
+        print(f"Labels: {labels}, Points: {len(points)}, Length: {self.length}, Window: {self.window}")
         centers = {}
         start_label = sys.maxsize
         for i, label in enumerate(labels):
@@ -89,8 +90,8 @@ class DBSCANClusterer:
             start_label = min(start_label, label)
             if label not in centers:
                 centers[label] = Centeroid(span=self.window)
-            if len(centers) > 10:
-                print(f"unepxected label:{label}")
+            # if len(centers) > 10:
+                # print(f"unepxected label:{label}")
             centers[label].add(points.datapoint(i))
         # Try fixing label index.
         if start_label == sys.maxsize:
@@ -125,8 +126,18 @@ class MovingDBSCANClusterer:
         window: Union[int, float, Callable[[DBSCANClusterer], bool]] = 4000,
     ):
         if isinstance(window, int):
+            logger.info(
+                "MovingDBSCANClusterer created with points window: %d, buffer size: %d",
+                window,
+                buffer_size,
+            )
             self.window_cb = self._get_points_window_cb(window)
         elif isinstance(window, float):
+            logger.info(
+                "MovingDBSCANClusterer created with time window: %.2f, buffer size: %d",
+                window,
+                buffer_size,
+            )
             self.window_cb = self._get_time_window_cb(window)
         else:
             self.window_cb = window

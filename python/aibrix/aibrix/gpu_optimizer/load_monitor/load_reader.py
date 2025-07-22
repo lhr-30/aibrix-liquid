@@ -272,6 +272,9 @@ class GatewayLoadReader:
                 return [], 0.0
 
             records, total, pending = self._parse_profiles(profiles, ts)
+            logger.info(
+                f"Read {len(records)} records for {self.key_ts_alignment}s, total={total}, pending={pending}, ts={ts}"
+            )
             logger.debug(f"TotalRequests={total},PendingRequests={pending}")
             return records, self._get_rate(total, pending)
 
