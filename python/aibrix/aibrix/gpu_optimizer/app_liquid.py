@@ -5,6 +5,7 @@ from starlette.applications import Starlette
 from starlette.responses import JSONResponse, PlainTextResponse
 from starlette.routing import Route
 import uvicorn
+import argparse
 from typing import Dict, Optional, Tuple
 
 from aibrix.gpu_optimizer.load_monitor.load_reader import GatewayLoadReader
@@ -75,4 +76,8 @@ app = Starlette(
 )
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8090)
+    parser = argparse.ArgumentParser(description="Start the optimizer metrics server")
+    parser.add_argument("--port", type=int, default=8090, help="Port to run the server on")
+    args = parser.parse_args()
+
+    uvicorn.run(app, host="0.0.0.0", port=args.port)
