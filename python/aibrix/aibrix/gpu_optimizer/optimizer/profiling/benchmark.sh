@@ -21,10 +21,10 @@ MODEL="meta-llama/Llama-3.1-8B-Instruct"
 TEMPERATURE=0.0  
 
 TOTAL=100  # Set your preferred request sizes and rates here.
-input_start=4096
+input_start=8192
 input_limit=$((2**12)) # 4K
-output_start=4096
-output_limit=$((2**12)) # 4K
+output_start=4
+output_limit=$((2**11)) # 4K
 rate_start=1
 rate_limit=$((2**6)) # 64
 workload=
