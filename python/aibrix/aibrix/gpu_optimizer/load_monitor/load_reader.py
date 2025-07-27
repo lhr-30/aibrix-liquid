@@ -386,7 +386,7 @@ class GatewayLoadReader:
         # else:
         #     # Abnormal, simply compensate for 2 times.
         #     return 2.0 * total / self.key_ts_alignment
-        return total / self.key_ts_alignment
+        return (total + pending) / self.key_ts_alignment
 
     def _parse_profiles(
         self, profiles: dict, ts: float, out_records: Optional[List[LoadRecord]] = None
