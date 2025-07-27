@@ -272,6 +272,8 @@ class GatewayLoadReader:
                 return [], 0.0
 
             records, total, pending = self._parse_profiles(profiles, ts)
+            for i, r in enumerate(records):
+                logger.info(f"[record {i}] ts={r.ts}, input={r.input_tokens}, output={r.output_tokens}, freq={r.freq}")
             logger.info(
                 f"Read {len(records)} records for {self.key_ts_alignment}s, total={total}, pending={pending}, ts={ts}"
             )
