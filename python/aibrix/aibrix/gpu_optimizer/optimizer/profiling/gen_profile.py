@@ -132,11 +132,21 @@ def gen(args):
 
     # Iterate slo_tputs and fill in the matrix with the throughput values that matches the SLO
     def setMetrics(conclusion_df, i, j):
-        e2es[i, j] = conclusion_df.loc[conclusion_df["metric"] == "E2E", "mean"].iloc[0]
+        # e2es[i, j] = conclusion_df.loc[conclusion_df["metric"] == "E2E", "mean"].iloc[0]
+        e2e_values = conclusion_df.loc[conclusion_df["metric"] == "E2E", "mean"]
+        if not e2e_values.empty:
+            e2es[i, j] = e2e_values.iloc[0]
+        else:
+            logger.warning(f"[Missing E2E] input_tokens={input_tokens[j]}, output_tokens={output_tokens[i]}")
+            e2es[i, j] = 0
+            
         if slos["TTFT"].is_set():
-            ttfts[i, j] = conclusion_df.loc[
-                conclusion_df["metric"] == "TTFT", "mean"
-            ].iloc[0]
+            ttft_values = conclusion_df.loc[conclusion_df["metric"] == "TTFT", "mean"]
+            if not ttft_values.empty:
+                ttfts[i, j] = ttft_values.iloc[0]
+            else:
+                logger.warning(f"[Missing TTFT] input_tokens={input_tokens[j]}, output_tokens={output_tokens[i]}")
+                ttfts[i, j] = 0
 
     for i in range(len(output_tokens)):
         for j in range(len(input_tokens)):
@@ -168,6 +178,8 @@ def gen(args):
                 ]
 
             if len(filtered_df) == 0:
+                print(f"all input_tokens is {input_tokens}, output_tokens is {output_tokens}")
+                print(f"input_tokens is {input_tokens[j]}, output_tokens is {output_tokens[i]}")
                 setMetrics(feature_df, i, j)
                 continue
 
