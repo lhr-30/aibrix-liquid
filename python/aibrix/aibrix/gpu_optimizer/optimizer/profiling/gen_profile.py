@@ -201,7 +201,8 @@ def gen(args):
             )
             # Test max request rate
             if len(shortlist) > 0:
-                max_request_rate = np.max(shortlist["request_rate"])
+                best_row = shortlist.loc[shortlist["mean"].idxmax()]
+                max_request_rate = best_row["request_rate"]
 
             conclusion_df = filtered_df.loc[
                 filtered_df["request_rate"] == max_request_rate
