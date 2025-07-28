@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 
 REDIS_PROFILE_KEY = "aibrix:profile_%s_%s"
-TPUT_TOLERANCE = 0.9
+TPUT_TOLERANCE = float(os.environ.get("TPUT_TOLERANCE", "0.9"))
 
 DEFAULT_THROUGHPUT_SLO = 0.0
 DEFAULT_TIME_SLO = math.inf
